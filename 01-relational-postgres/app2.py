@@ -15,10 +15,11 @@ TAMANHO_MAXIMO_SENHA = 32
 
 def conectar_banco():
     return psycopg2.connect(
-        host="database-pr.cachldhgkeax.us-east-1.rds.amazonaws.com",
-        database="postgres",
-        user="postgres",
-        password="idkpass1?"
+        host=os.environ.get("DB_HOST", "localhost"),
+        database=os.environ.get("DB_NAME", "postgres"),
+        user=os.environ.get("DB_USER", "postgres"),
+        password=os.environ.get("DB_PASSWORD", "postgres"),
+        port=os.environ.get("DB_PORT", "5432")
     )
 
 
