@@ -1,4 +1,4 @@
-# 🚀 Data Engineering & Analytics Modernization
+# Data Engineering & Analytics Modernization
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
@@ -8,76 +8,65 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Data Warehouse](https://img.shields.io/badge/Data_Warehouse-FF6F00?style=for-the-badge&logo=amazon-redshift&logoColor=white)
 
-## 📌 Visão Geral Executiva
+## Sobre o Projeto
 
-Este repositório consolida um projeto de **Engenharia de Dados de Ponta a Ponta**, focando na transição arquitetural de sistemas puramente operacionais (OLTP) para ecossistemas analíticos de alta performance (OLAP). O projeto resolve os desafios intrínsecos de migrar esquemas altamente normalizados num banco de dados relacional para modelos orientados a documentos em NoSQL, garantindo integridade referencial a nível de aplicação e pavimentando o caminho para um Data Warehouse corporativo, aplicando modelagem dimensional (Star/Snowflake Schema).
+O projeto simula um ciclo completo de dados: uma base transacional relacional (PostgreSQL), a migração para um modelo orientado a documentos (MongoDB) e a criação de um Data Warehouse analítico (Star Schema) via processos ETL em Python.
 
----
-
-## 🏗️ Diagrama de Arquitetura
+## Diagrama de Arquitetura
 
 ```mermaid
-flowchart TD
-    subgraph "Camada Operacional (OLTP)"
-        PG[("PostgreSQL<br>Relacional / Normalizado")]
-        MDB[("MongoDB<br>NoSQL / Documentos")]
-        AppPG["Portal Acadêmico<br>(Flask)"]
-        AppMDB["Sistema de Admissões<br>(Flask)"]
+flowchart LR
+    subgraph OLTP ["1. Fontes Transacionais (OLTP)"]
+        direction TB
+        PG["🐘 PostgreSQL<br><i>(Relacional / Normalizado)</i>"]
+        MDB["🍃 MongoDB<br><i>(NoSQL / Documentos)</i>"]
     end
 
-    subgraph "Camada de Ingestão e Processamento (ETL)"
-        PyETL["Python / Pandas<br>Scripts ETL"]
-        HopETL["Apache Hop<br>Pipelines .hpl"]
+    subgraph ETL ["2. Ingestão & Processamento"]
+        direction TB
+        HOP["🔄 Apache Hop<br><i>(Workflows .hpl)</i>"]
+        PY["🐍 Python & Pandas<br><i>(Scripts ETL / Upsert)</i>"]
     end
 
-    subgraph "Camada Analítica (OLAP)"
-        DW[("Data Warehouse<br>Star / Snowflake Schema")]
-        BI["Consultas OLAP &<br>Dashboards Analíticos"]
+    subgraph OLAP ["3. Camada Analítica (OLAP)"]
+        direction TB
+        DW[("🏛️ Data Warehouse<br><i>(Star Schema)</i>")]
+        BI["📊 Consultas OLAP & BI"]
     end
 
-    AppPG -->|Leitura / Escrita| PG
-    AppMDB -->|Leitura / Escrita| MDB
+    PG -->|Batch| HOP
+    PG -->|CDC / Extração| PY
+    MDB -->|Extração| PY
 
-    PG -->|Extração| PyETL
-    PG -->|Extração| HopETL
-    MDB -->|Extração| PyETL
+    HOP -->|Fatos| DW
+    PY -->|Dimensões| DW
+    DW -->|Leitura| BI
 
-    PyETL -->|Carga Dimensional| DW
-    HopETL -->|Carga de Fatos| DW
+    classDef default fill:#161b22,stroke:#30363d,stroke-width:1px,color:#c9d1d9;
+    classDef source fill:#1c2128,stroke:#58a6ff,stroke-width:1.5px,color:#f0f6fc;
+    classDef proc fill:#1c2128,stroke:#a371f7,stroke-width:1.5px,color:#f0f6fc;
+    classDef dest fill:#1c2128,stroke:#3fb950,stroke-width:1.5px,color:#f0f6fc;
 
-    DW -->|Consumo Analítico| BI
-    
-    classDef db fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef app fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef etl fill:#bfb,stroke:#333,stroke-width:2px;
-    
-    class PG,MDB,DW db;
-    class AppPG,AppMDB,BI app;
-    class PyETL,HopETL etl;
+    class PG,MDB source;
+    class HOP,PY proc;
+    class DW,BI dest;
 ```
 
----
+## Estrutura e Camadas do Projeto
 
-## 📂 Estrutura e Camadas do Projeto
+### `01-relational-postgres/` (Camada Transacional OLTP)
+Opera sobre PostgreSQL na 3ª Forma Normal (3FN), focado em consistência ACID. Inclui a aplicação Flask original do portal universitário. O modelo normalizado protege a integridade dos dados durante a escrita, mas exige múltiplos JOINs que lentificam a leitura de agregados.
 
-### `01-relational-postgres/` (Camada Transacional OLTP RDBMS)
-Contém a base fundacional do projeto operando sobre PostgreSQL. O modelo de dados original está na 3ª Forma Normal (3FN) focado em garantia de integridade transacional (ACID) em operações cotidianas do portal universitário.
-- **Destaque Técnico:** Consultas complexas usando JOINs otimizados e gerenciamento de transações usando conectores robustos como `psycopg2`.
-
-### `02-nosql-mongodb/` (Camada Operacional NoSQL)
-Demonstra a migração e adaptação de um modelo relacional para um modelo orientado a documentos visando escalabilidade e alta flexibilidade (MongoDB).
-- **Destaque Técnico:** Resolução do desafio de "impedance mismatch" entre o modelo tabular e documentos aninhados; implementação de integridade referencial a nível de aplicação via validações JSON Schema rigorosas; pipelines de `ETL.py` nativos para upserts idempotentes.
+### `02-nosql-mongodb/` (Migração e Operação NoSQL)
+Implementa a versão orientada a documentos (MongoDB) do banco de dados. A desnormalização acelera o acesso conjunto às informações, porém introduz a necessidade de atualizações múltiplas. Como o MongoDB não assegura chaves estrangeiras, a integridade referencial é delegada para a aplicação, sendo gerida no Flask e validada via JSON Schema.
 
 ### `03-data-warehouse-etl/` (Camada Analítica DW & OLAP)
-Foca no processamento e estruturação de dados analíticos. A modelagem aqui transita de OLTP para dimensional (Star Schema/Snowflake Schema) otimizada para leitura.
-- **Destaque Técnico:** Pipelines de extração e transformação construídos com Pandas (`etl_pandas_dw.py`) e fluxos Apache Hop (`.hpl`); extração inteligente da base relacional consolidando dimensões como Professor, Disciplina, Semestre e tabela Fato Turma para respostas rápidas de BI.
+Centraliza a estrutura dimensional (Star/Snowflake Schema) otimizada para leitura agregada. O isolamento no Data Warehouse previne que consultas pesadas de relatórios consumam recursos da base de produção. A carga é realizada por pipelines extraindo da base relacional e do MongoDB usando Pandas (`etl_pandas_dw.py`) e Apache Hop (`.hpl`).
 
-### `docs/` (Documentação e Especificações)
-Contém os diagramas, mapeamentos, regras de negócios e relatórios de execução das etapas de Engenharia e Arquitetura de Dados.
+### `docs/`
+Mapeamentos de esquema, diagramas e relatórios de implementação técnica.
 
----
-
-## ⚙️ Guia Completo de Execução
+## Execução
 
 ### 1. Clonar o Repositório
 ```bash
@@ -85,49 +74,40 @@ git clone https://github.com/seu-usuario/Engenharia-de-dados.git
 cd Engenharia-de-dados
 ```
 
-### 2. Configurar o Ambiente Virtual (venv)
-É altamente recomendado isolar as dependências para não conflitar com pacotes do sistema:
+### 2. Configurar o Ambiente Virtual
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # No Windows use: venv\Scripts\activate
-```
-
-### 3. Instalar Dependências Essenciais
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configurar as Variáveis de Ambiente
-Copie o modelo de variáveis e ajuste com suas credenciais (As senhas hardcoded foram higienizadas para segurança do projeto em produção):
+### 3. Configurar as Variáveis de Ambiente
+Copie o modelo de variáveis para criar o arquivo `.env`. Edite-o informando os URIs locais ou em nuvem para o PostgreSQL e o MongoDB:
 ```bash
 cp .env.example .env
 ```
-> **Nota:** Edite o arquivo `.env` inserindo as credenciais corretas do seu cluster MongoDB Atlas e instância PostgreSQL local/RDS.
 
-### 5. Executando os Módulos
+### 4. Executando os Módulos
 
 **Módulo Relacional (PostgreSQL):**
 ```bash
 cd 01-relational-postgres
-# Certifique-se de que o banco PostgreSQL está rodando e execute a aplicação Flask
+# Certifique-se de que o banco PostgreSQL está rodando
 python app2.py
 ```
 
 **Módulo NoSQL (MongoDB):**
 ```bash
 cd 02-nosql-mongodb
-# Se precisar rodar o pipeline de carga do MongoDB:
+# Realiza carga/upsert no banco
 python ETL.py --apply
-# Para iniciar o painel Web do MongoDB:
+# Inicia a aplicação web
 python app.py
 ```
 
-**Módulo Data Warehouse (Pipelines Pandas/Hop):**
+**Módulo Data Warehouse:**
 ```bash
 cd 03-data-warehouse-etl
-# Execute o script ETL em Pandas para gerar os dados analíticos
+# Roda a extração em Pandas
 python etl_pandas_dw.py
 ```
-
----
-*Este projeto aplica as melhores práticas de Arquitetura de Software e Engenharia de Dados, possuindo credenciais protegidas e dependências bem definidas. Pronto para evoluir em ambientes de Produção.*
